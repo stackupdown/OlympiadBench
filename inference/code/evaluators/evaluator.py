@@ -83,7 +83,8 @@ class Evaluator:
 				if question['unit']:
 					multiple_answer_text += '(单位)'
 					unit_text = '，注意答案的单位不要放在\\boxed{}中'
-				prompt = f'以下是中国{subject_content}竞赛中的解答题{answer_type_text}。请根据题目的要求和所提供的信息计算得出答案。解答过程和结果中使用的变量和公式请使用LaTeX格式表示。请在最后以“所以最终答案是{multiple_answer_text}。”显式给出结果{unit_text}。'
+				prompt = f'以下是中国{subject_content}竞赛中的解答题{answer_type_text}。' + \
+					f'请根据题目的要求和所提供的信息计算得出答案。解答过程和结果中使用的变量和公式请使用LaTeX格式表示。请在最后以“所以最终答案是{multiple_answer_text}。”显式给出结果{unit_text}。'
 		else:
 			subject_content = 'Math' if self.is_math else 'Physics'
 			if self.is_theorem_proving:
@@ -129,7 +130,7 @@ class Evaluator:
 			os.mkdir(save_result_dir)
 		temp_result = []
 
-		for id in tqdm(range(len(json_dataset))):
+		for id in tqdm(range(len(json_dataset))): # 5
 			question = json_dataset[id]
 			prompt = self.make_prompt(question)
 			if self.is_math:
@@ -155,3 +156,4 @@ class Evaluator:
 			with open(os.path.join(save_result_dir, f'{model_name}_{100*(int(id/100))}_to_{id}.json'), 'w', encoding='utf-8') as f:
 				json.dump(temp_result, f, ensure_ascii=False, indent=4)
 		print(f'Evaluation finished for {json_dataset_path}.')
+		# deepseek_0_to_5.json

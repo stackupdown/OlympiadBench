@@ -12,7 +12,7 @@ class Qwen_VL_Evaluator(Evaluator):
 		self.api_pool = [
 			YOUR_API_KEY
 		]
-		
+
 	def split_markdown(self, md):
 		# use regex to extract image property
 		items = re.split('(<img_\d+>)', md)

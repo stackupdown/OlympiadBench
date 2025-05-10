@@ -12,7 +12,8 @@ class Deepseek_Evaluator(Evaluator):
 		super(Deepseek_Evaluator, self).__init__(model_name, k)
 		# model_name = "../../deepseek-math-7b-rl"
 		self.tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-		self.model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16, device_map=f'cuda:{cuda_device_id}', trust_remote_code=True)
+		# self.model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16, device_map=f'cuda:{cuda_device_id}', trust_remote_code=True)
+		self.model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16, device_map='auto', trust_remote_code=True)
 		self.model.generation_config = GenerationConfig.from_pretrained(model_name)
 		self.model.generation_config.pad_token_id = self.model.generation_config.eos_token_id
 

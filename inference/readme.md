@@ -25,6 +25,7 @@ Install package and download the model as demonstrated in [deepseek huggingface 
 cd code/
 # run evaluation
 python evaluate_all.py --model_name <PATH_TO_MODEL_FOLDER> --dataset_name <DATASET_NAME>
+// python evaluate_all.py --model_name deepseek --dataset_path ./Dataset/data/OE_MM_maths_en_COMP.json
 # automated judging
 cd ..
 python judge.py

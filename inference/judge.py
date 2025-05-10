@@ -1,8 +1,23 @@
 import os, sys, re
 import json
 from tqdm import tqdm
+import argparse
+
 sys.path.append('code')
 from math_judger import MathJudger
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter('[%(levelname)s][%(asctime)s-%(name)s]-[%(filename)s:%(lineno)d]-%(message)s')
+console_handler.setFormatter(formatter)
+
+logger.addHandler(console_handler)
+
 
 def extract_answer(is_chinese, model_output, is_deepseek=False):
 	# deepseekmath has special answering format
@@ -34,20 +49,21 @@ def extract_answer(is_chinese, model_output, is_deepseek=False):
 		return model_output
 
 
-def judge_result():
+def judge_result(args):
 	judger = MathJudger()
-
-	for dataset in os.listdir('generated'):
+	# os.path.join('generated', dataset)
+	for dataset in os.listdir(args.path):
 		print('-'*10 + dataset + '-'*10)
 		if "TP" in dataset:
 			print("Warning: Theorem proving problems cannot currently be automatically assessed.")
 			continue
 		is_chinese = True if 'zh' in dataset else False # 也没有这个属性了
-		for model in os.listdir(os.path.join('generated', dataset)):
+		dataset_path = os.path.join(args.path, dataset)
+		for model in os.listdir(dataset_path):
 			is_deepseek = True if 'deepseek' in model else False
-			print(model)
-			results_path = os.path.join('generated', dataset, model)
-			print(results_path)
+			logger.info(model)
+			results_path = os.path.join(args.path, dataset, model)
+			logger.info(results_path)
 			if os.path.exists(results_path):
 				full_num = 0
 				machine_scored_num = 0
@@ -100,5 +116,12 @@ def judge_result():
 					json.dump(merged_result, f, ensure_ascii=False, indent=4)
 
 
+def parse_args():
+	parser = argparse.ArgumentParser()
+	parser.add_argument('--path', type=str, required=True) # generated
+	return parser.parse_args()
+
+
 if __name__ == '__main__':
-	judge_result()
+	args = parse_args()
+	judge_result(args)

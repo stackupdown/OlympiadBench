@@ -31,7 +31,7 @@ class MathJudger:
         }
         self.pi = parse_latex("\\pi")
         self.precision = 1e-8
-        
+
 
     def split_by_comma(self, expr: str):
         in_bracket_num = 0
@@ -47,8 +47,8 @@ class MathJudger:
                 start_idx = i + 1
 
         if start_idx < len(expr):
-            splitted_expr.append(expr[start_idx:].strip())   
-        
+            splitted_expr.append(expr[start_idx:].strip())
+
         return splitted_expr
 
 
@@ -60,9 +60,9 @@ class MathJudger:
                 new_expr_list.append(expr.replace("\\pm", "-"))
             else:
                 new_expr_list.append(expr)
-        
+
         return new_expr_list
-    
+
 
     def judge(self, expression1, expression2, precision=1e-8):
         # (默认 expression1 为 Ground_Truth)
@@ -75,11 +75,11 @@ class MathJudger:
         if expression1 == expression2:
             # print("原生相等")
             return True
-        
+
         # 去除字符串中的中文字符，因为上面已经判断过了类似回答为"能"或"不能"的含有中文字符的回答情况
         expression1 = re.sub(r'[\u4e00-\u9fff]+', '', expression1)
         expression2 = re.sub(r'[\u4e00-\u9fff]+', '', expression2)
-        
+
         expression1 = self.split_by_comma(expression1)
         expression2 = self.split_by_comma(expression2)
 
@@ -89,7 +89,7 @@ class MathJudger:
         # 设计误差值列表
         if len(precision) <= 1:
             precision = precision * len(temp_list1)
-        
+
         if len(temp_list1) != len(temp_list2):
             return False
 
@@ -114,14 +114,14 @@ class MathJudger:
 
         # If all elements are matched and removed, the lists can be paired
         return True
-    
+
     def is_interval(self, epr):
         return epr.startswith(("(","[")) and epr.endswith((")","]"))
 
     # 在进行数值计算前，需要将sympy中的pi符号替换为pi的近似数值
     def sympy_sub_pi(self, expression_sympy):
         return expression_sympy.subs(self.pi, math.pi)
-    
+
     # 默认第一个表达式是 ground_truth
     def is_equal(self, expression1, expression2):
         if expression1 == expression2 and expression1 != "" and expression2 != "":
@@ -144,7 +144,7 @@ class MathJudger:
                 return True
         except:
             pass
-        
+
         # 再判断是否是表达式相等
         try:
             if self.expression_equal(expression1, expression2) and not ("=" in expression1 and "=" in expression2):
@@ -152,7 +152,7 @@ class MathJudger:
                 return True
         except:
             pass
-            
+
         # 再判断是否是等式相等
         try:
             if self.equation_equal(expression1, expression2):
@@ -160,12 +160,10 @@ class MathJudger:
                 return True
         except:
             pass
-            
-        
 
         return False
 
-    
+
     # 判断两个数值在误差允许范围内是否相等
     def numerical_equal(self, expression1: str, expression2: str, include_percentage: bool = True):
         """
@@ -176,18 +174,18 @@ class MathJudger:
         """
         reference = float(expression1)
         prediction = float(expression2)
-        
+
         if include_percentage:
             gt_result = [reference / 100, reference, reference * 100]
         else:
             gt_result = [reference]
-        
+
         for item in gt_result:
             # if isclose(item, prediction, abs_tol=self.precision, rel_tol=0):
             if abs(item - prediction) <= self.precision * 1.01:
                 return True
         return False
-    
+
 
     def expression_equal(self, exp1, exp2):
         """
@@ -201,7 +199,7 @@ class MathJudger:
             if "=" in expression:
                 expression = expression.split("=")[1]
             return expression.strip()
-        
+
         exp1 = extract_expression(exp1)
         exp2 = extract_expression(exp2)
 
@@ -216,7 +214,7 @@ class MathJudger:
             expr1_sym = self.sympy_sub_pi(expr1_sym)
             expr2_sym = self.sympy_sub_pi(expr2_sym)
             # 如果输入的表达式可以计算出具体数值的话，则将其进行数值计算的比较
-            
+
 
             if (expr1_sym.has(sp.Symbol) and not expr2_sym.has(sp.Symbol)) or (not expr1_sym.has(sp.Symbol) and expr2_sym.has(sp.Symbol)):
                 return False
@@ -225,7 +223,6 @@ class MathJudger:
                     if not (self.can_compute_power(expr1_sym) and self.can_compute_power(expr2_sym)):
                         print(f"These two number can not be calculated by current computer for: \"{str(expr1_sym)}\" and \"{str(expr2_sym)}\"")
                         return False
-
 
                     if abs(expr1_sym.evalf() - expr2_sym.evalf()) <= self.precision * 1.01:
                         return True
@@ -238,7 +235,7 @@ class MathJudger:
                     simplified_expr = simplify(expr1_sym - expr2_sym)
 
                     num_value = simplified_expr.evalf()
-                    
+
                     return abs(num_value) < 1e-3
                 except:
                     return False
@@ -280,7 +277,6 @@ class MathJudger:
         else:
             return False
 
-
     def interval_equal(self, expression1, expression2):
         """
         函数: 判断两个区间是否在数学意义上等价
@@ -293,7 +289,7 @@ class MathJudger:
             # 首先比较两边的括号是否一致，一致的话再进行下一步比较
             if inter1[0] != inter2[0] or inter1[-1] != inter2[-1]:
                 return False
-            
+
             inter1 = inter1.strip('[]()')
             inter2 = inter2.strip('[]()')
 
@@ -306,7 +302,7 @@ class MathJudger:
                     return False
             return True
 
-            
+
         interval1 = expression1
         interval2 = expression2
 
@@ -315,7 +311,7 @@ class MathJudger:
         else:
             inter_list1 = interval1.split("\\cup")
             inter_list2 = interval2.split("\\cup")
-            
+
             if len(inter_list1) != len(inter_list2):
                 return False
             else:
@@ -324,7 +320,6 @@ class MathJudger:
                         return False
                 return True
 
-    
 
     def preprocess(self, expression1, expression2):
 
@@ -366,15 +361,13 @@ class MathJudger:
                         results += ans + ","
                 else:
                     results = latex_str
-                
-            
+
             return results
-        
+
         def sepcial_symbol_replace(expression):
             if "\\in " in expression:
                 expression = expression.split("\\in ")[1]
-            
-            
+
             # 进行特殊字符的替换，这些字符都不影响latex的解析，属于美观/修饰性字符
             for signal in self.special_signal_map:
                 expression = expression.replace(signal, self.special_signal_map[signal])
@@ -385,21 +378,21 @@ class MathJudger:
             expression = re.sub(pattern, r'\1', expression)
 
             return expression
-        
+
 
         exp1, exp2 = extract_boxed_content(expression1), extract_boxed_content(expression2)
         exp1, exp2 = sepcial_symbol_replace(exp1), sepcial_symbol_replace(exp2)
 
         return exp1, exp2
-    
+
 
     def can_compute_power(self, expr):
         """
         Check if the power expression can be computed.
-        
+
         Parameters:
         expr (sympy expression): The expression to check.
-        
+
         Returns:
         bool: True if the expression can be computed, False otherwise.
         """
@@ -407,12 +400,12 @@ class MathJudger:
         if isinstance(expr, Pow):
             # Extract the base and the exponent
             base, exp = expr.as_base_exp()
-            
+
             # Check if the base and the exponent are numbers
             if base.is_number and exp.is_number:
                 # Set a threshold for the maximum size of the exponent
                 MAX_EXP = 1000  # This threshold can be adjusted based on the computing environment
-                
+
                 # Check if the exponent is greater than the threshold
                 if abs(exp.evalf()) > MAX_EXP:
                     return False
@@ -426,23 +419,35 @@ class MathJudger:
             return True
 
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model_name", type=str, required=True)
+    parser.add_argument("--dataset_path", type=str, required=True)
+    parser.add_argument("--save_dir", type=str, default='../generated')
+    parser.add_argument("--saving_name", type=str)
+    parser.add_argument("--cuda_device", type=int)
+
+    return parser.parse_args()
+
 if __name__ == "__main__":
-    example_path = "评测/评测函数样例.json"
+    # example_path = "评测/评测函数样例.json"
+    
+    args = parse_args()
+
+    example_path = '~/labs/all-models/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B/DeepSeek-R1-Distill-Qwen-1.5B_0_to_4.json'
     with open(example_path, "r", encoding="utf-8") as f:
         examples = json.load(f)
-    
-    
+
     judger = MathJudger()
-    
 
     exp1 = "10^{10^{10^{10}}}"
     exp2 = "10^{10}"
     precision = 1e-4
 
-    res = judger.judge(exp1, exp2, precision)
-    print(res)
-    if res != True:
-        sys.exit(0)
+    # res = judger.judge(exp1, exp2, precision)
+    # print(res)
+    # if res != True:
+    #     sys.exit(0)
 
     for theme in examples:
         for exp in theme["测试样例"]:

@@ -1,13 +1,16 @@
 import os, sys, re
 import json
 import argparse
+import sys
+sys.path.append('code')
+from minheap import get_logger
+logger = get_logger(__name__)
 
-
-def calculate_merged_accuracy(reference_dir, text_only):
+def calculate_merged_accuracy(args, reference_dir, text_only):
 	if text_only:
 		print('*'*20 + ' evaluating in text-only mode ' + '*'*20)
 
-	for model in os.listdir('merged_result'):
+	for model in os.listdir(args.answer_dir):
 		print('-'*10 + model + '-'*10)
 		total_scored_num = 0
 		total_correct_num = 0
@@ -47,14 +50,17 @@ def calculate_merged_accuracy(reference_dir, text_only):
 			print(f'{full_num} finished\t|{full_num} scored\t|accuracy={accuracy:.2f}%\t|{len(missing_id_list)} missing\t|{correct_num} correct')
 			total_scored_num += full_num
 			total_correct_num += correct_num
+		logger.info("{}/{}".format(total_correct_num, total_scored_num))
 		print('Average accuracy: ', (total_correct_num + 0.0) / total_scored_num * 100)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--ref_dir", required=True) # Path to origin dataset
-	parser.add_argument("--text_only", action='store_true') 
+	parser.add_argument("--text_only", action='store_true')
+	parser.add_argument("--answer_dir", type=str, required=True)
 	args = parser.parse_args()
 	calculate_merged_accuracy(
+		args,
 		reference_dir=args.ref_dir,
 		text_only=args.text_only
 	)
