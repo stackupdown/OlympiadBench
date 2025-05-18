@@ -5,7 +5,7 @@ from evaluators.gpt_4v import GPT_4V_Evaluator
 from evaluators.gemini_pro_vision import Gemini_Pro_Vision_Evaluator
 from evaluators.qwen_vl import Qwen_VL_Evaluator
 from evaluators.deepseek_evaluator import Deepseek_Evaluator
-from evaluators.qwen_evaluator import Qwen_Evaluator
+from evaluators.qwen_evaluator import Qwen_Evaluator, Qwen_VLLM_Evaluator
 from evaluators.check_prompt import Check_Prompt_Evaluator
 from evaluators.text_only_gpt_4 import Text_Only_GPT_4_Evaluator
 from minheap import select_gpus
@@ -65,12 +65,13 @@ def main(args):
 	else:
 		print("Unknown model name")
 		exit()
-	if not os.path.exists(args.save_dir):
-		os.mkdir(args.save_dir)
 
-	dataset_save_dir = os.path.join(args.save_dir, args.dataset_name)
+	dataset_name = '/'.join(args.dataset_name.split('/')[-2:])
+	dataset_save_dir = os.path.join(args.save_dir, dataset_name)
+	dataset_save_dir = os.path.expanduser(dataset_save_dir)
 	if not os.path.exists(dataset_save_dir):
-		os.mkdir(dataset_save_dir)
+		os.makedirs(dataset_save_dir)
+
 	# dataset_path = os.path.join('data_0301', args.dataset_name)
 	if not args.saving_name:
 		save_result_dir = os.path.join(dataset_save_dir, args.model_name)
@@ -107,13 +108,5 @@ if __name__ == "__main__":
 
 	import time
 	import datetime
-	while True:
-		try:
-			valid_gpus, left_gpus = select_gpus(25, min_gpu=2, max_gpu=2)
-			print("使用 GPU: {} {}".format(valid_gpus, left_gpus))
-			break
-		except RuntimeError as e:
-			print("{} GPU 选择失败，重新选择...{}".format(
-				datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), e))
-			time.sleep(5)
+
 	main(args)

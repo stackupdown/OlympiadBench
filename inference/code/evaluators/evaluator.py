@@ -61,6 +61,14 @@ def get_answer_type_text(answer_type, is_chinese, multiple_answer):
 						full_answer_text = f'The problem has multiple answers, with the answers in order being {answer_text}. '
 	return full_answer_text
 
+def load_jsonl(path):
+	lines = []
+	if os.path.exists(path):
+		with open(path, 'r', encoding='utf-8') as f:
+			lines = f.readlines()
+			lines = [json.loads(line.strip()) for line in lines]
+	return lines
+
 class Evaluator:
 	def __init__(self, model_name, k=-1):
 		self.model_name = model_name
@@ -117,6 +125,47 @@ class Evaluator:
 			print('Cannot find image directory!')
 			exit()
 
+	# def eval_dataset(self, json_dataset_path, json_dataset, save_result_dir):
+	# 	self.json_dataset_path = json_dataset_path
+	# 	self.get_image_mapping_dict() # Confirm if there is an image folder
+	# 	self.is_theorem_proving = 'TP' in json_dataset_path
+	# 	self.is_math = 'maths' in json_dataset_path
+	# 	self.is_chinese = 'zh' in json_dataset_path
+
+	# 	model_name = self.model_name.split("/")[-1].strip() # For paths like deepseek, extract the model name.
+
+	# 	if not os.path.exists(save_result_dir):
+	# 		os.mkdir(save_result_dir)
+	# 	temp_result = []
+
+	# 	for id in tqdm(range(len(json_dataset))): # 5
+	# 		question = json_dataset[id]
+	# 		prompt = self.make_prompt(question)
+	# 		if self.is_math:
+	# 			input = self.make_input(prompt, question['question'])
+	# 		else:
+	# 			if 'context' in question.keys() and question['context']: # cannot be null
+	# 				input = self.make_input(prompt, question['context']+'\n'+question['question'])
+	# 			else:
+	# 				input = self.make_input(prompt, question['question'])
+	# 		answer = self.get_answer(input)
+	# 		if 'model_output' not in question.keys():
+	# 			question['model_output'] = {model_name:{'raw_output':answer, 'raw_input': input}}
+	# 		else:
+	# 			question['model_output'][model_name] = {'raw_output':answer, 'raw_input': input}
+	# 		temp_result.append(question)
+	# 		if id % 100 == 99:
+	# 			save_start_id = id - 99
+	# 			with open(os.path.join(save_result_dir, f'{model_name}_{save_start_id}_to_{id}.json'), 'w', encoding='utf-8') as f:
+	# 				json.dump(temp_result, f, ensure_ascii=False, indent=4)
+	# 			temp_result = []
+	# 	if temp_result:
+	# 		save_start_id = 100 * int(id / 100)
+	# 		with open(os.path.join(save_result_dir, f'{model_name}_{100*(int(id/100))}_to_{id}.json'), 'w', encoding='utf-8') as f:
+	# 			json.dump(temp_result, f, ensure_ascii=False, indent=4)
+	# 	print(f'Evaluation finished for {json_dataset_path}.')
+	# 	# deepseek_0_to_5.json
+
 	def eval_dataset(self, json_dataset_path, json_dataset, save_result_dir):
 		self.json_dataset_path = json_dataset_path
 		self.get_image_mapping_dict() # Confirm if there is an image folder
@@ -127,33 +176,27 @@ class Evaluator:
 		model_name = self.model_name.split("/")[-1].strip() # For paths like deepseek, extract the model name.
 
 		if not os.path.exists(save_result_dir):
-			os.mkdir(save_result_dir)
-		temp_result = []
+			os.makedirs(save_result_dir)
 
-		for id in tqdm(range(len(json_dataset))): # 5
-			question = json_dataset[id]
-			prompt = self.make_prompt(question)
-			if self.is_math:
-				input = self.make_input(prompt, question['question'])
-			else:
-				if 'context' in question.keys() and question['context']: # cannot be null
-					input = self.make_input(prompt, question['context']+'\n'+question['question'])
-				else:
+		temp_result = []
+		finish_data = load_jsonl(os.path.join(save_result_dir, f'{model_name}.jsonl'))
+		length = len(json_dataset) - len(finish_data)
+		with open(os.path.join(save_result_dir, f'{model_name}.jsonl'), 'a', encoding='utf-8') as f:
+			for idx in tqdm(range(len(finish_data), len(json_dataset))): # 5
+				question = json_dataset[idx]
+				prompt = self.make_prompt(question)
+				if self.is_math:
 					input = self.make_input(prompt, question['question'])
-			answer = self.get_answer(input)
-			if 'model_output' not in question.keys():
-				question['model_output'] = {model_name:{'raw_output':answer}}
-			else:
-				question['model_output'][model_name] = {'raw_output':answer}
-			temp_result.append(question)
-			if id % 100 == 99:
-				save_start_id = id - 99
-				with open(os.path.join(save_result_dir, f'{model_name}_{save_start_id}_to_{id}.json'), 'w', encoding='utf-8') as f:
-					json.dump(temp_result, f, ensure_ascii=False, indent=4)
-				temp_result = []
-		if temp_result:
-			save_start_id = 100 * int(id / 100)
-			with open(os.path.join(save_result_dir, f'{model_name}_{100*(int(id/100))}_to_{id}.json'), 'w', encoding='utf-8') as f:
-				json.dump(temp_result, f, ensure_ascii=False, indent=4)
+				else:
+					if 'context' in question.keys() and question['context']: # cannot be null
+						input = self.make_input(prompt, question['context']+'\n'+question['question'])
+					else:
+						input = self.make_input(prompt, question['question'])
+				answer = self.get_answer(input)
+				if 'model_output' not in question.keys():
+					question['model_output'] = {model_name:{'raw_output':answer, 'raw_input': input}}
+				else:
+					question['model_output'][model_name] = {'raw_output':answer, 'raw_input': input}
+				f.write(json.dumps(question) + '\n')
 		print(f'Evaluation finished for {json_dataset_path}.')
 		# deepseek_0_to_5.json
